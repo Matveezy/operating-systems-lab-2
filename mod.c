@@ -7,6 +7,7 @@
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
 #include <linux/string.h>
+#include <linux/slab.h>
 
 #include "./ioctl/ioctl_cmd.h"
 
@@ -18,15 +19,18 @@ MODULE_VERSION("0.01");
 #define MYMAJOR 17
 
 void print_info_pci_dev_k(my_pci_dev_struct *);
+
 my_pci_dev_struct my_device = {0};
 static struct socket *sock = NULL;
 static my_socket_struct my_sock;
-int err = 1;
+int err;
 
 static long int my_ioctl(struct file *file, unsigned cmd, unsigned long arg) {
-    static struct pci_dev *device = NULL;
     pci_dev_params user_params;
+    static struct pci_dev *device = NULL;
     int32_t sockfd;
+    size_t pci_dev_driver_name_length;
+    data_transfer dt;
     switch (cmd) {
         case PCI_DEV_W_PARAMS:
             if (copy_from_user(&user_params, (pci_dev_params *) arg, sizeof(pci_dev_params))) {
@@ -45,13 +49,12 @@ static long int my_ioctl(struct file *file, unsigned cmd, unsigned long arg) {
                 my_device.vendor = device->vendor;
                 my_device.device = device->device;
                 my_device.class = device->class;
-                my_device.driver_name = device->driver->name;
                 print_info_pci_dev_k(&my_device);
             }
             break;
         case SOCKET_FD_W_VALUE:
             if (copy_from_user(&sockfd, (int32_t *) arg, sizeof(sockfd))) {
-                printk("ioctl - Error copying data from user!\n");
+                printk("ioctl - SOCKET_FD_W_VALUE error!\n");
             } else {
                 printk("ioctl - socket file descriptor %d\n", sockfd);
                 sock = sockfd_lookup(sockfd, &err);
@@ -69,29 +72,43 @@ static long int my_ioctl(struct file *file, unsigned cmd, unsigned long arg) {
                 }
             }
             break;
+        case PCI_DEV_R_STR_LENGTH:
+            pci_dev_driver_name_length = strlen(device->driver->name);
+            if (copy_to_user((size_t *) arg, &pci_dev_driver_name_length, sizeof(size_t))) {
+                printk("ioctl - PCI_DEV_R_STR_LENGTH error!\n");
+            } else {
+                printk("ioctl - Pci driver length is %ld. Send to user space\n", pci_dev_driver_name_length);
+            }
+            break;
+        case PCI_DEV_R_DRIVER_NAME:
+            if (copy_from_user(&dt, (data_transfer *) arg, sizeof(data_transfer))) {
+                printk(" ioctl - PCI_DEV_R_DRIVER_NAME data_transfer read from user error!\n");
+            }
+            if (copy_to_user(dt.buffer, device->driver->name, strlen(device->driver->name) + 1)) {
+                printk("oictl - PCI_DEV_R_DRIVER_NAME data_transfer write to user error!\n");
+            }
+            break;
         case SOCKET_R_VALUE:
             if (copy_to_user((my_socket_struct *) arg, &my_sock, sizeof(my_socket_struct))) {
-                printk("ioctl - Error copying data to user!\n");
-            } else {
+                printk("ioctl - SOCKET_R_VALUE error!\n");
+            } else
                 printk("ioctl - The socket_r_value command called!\n");
-            }
             break;
         case PCI_DEV_R_VALUE:
             if (copy_to_user((my_pci_dev_struct *) arg, &my_device, sizeof(my_pci_dev_struct))) {
-                printk("ioctl - Error SOCKET_R_VALUE!\n");
+                printk("ioctl - PCI_DEV_R_VALUE error!\n");
             }
             break;
-
     }
     return 0;
 }
 
-static int driver_open(struct inode *device_file, struct file *inctance) {
+static int driver_open(struct inode *device_file, struct file *instance) {
     printk("dev_num - open was called\n");
     return 0;
 }
 
-static int driver_close(struct inode *device_file, struct file *inctance) {
+static int driver_close(struct inode *device_file, struct file *instance) {
     printk("dev_num - close was called\n");
     return 0;
 }
@@ -103,9 +120,7 @@ static struct file_operations fops = {
         .unlocked_ioctl = my_ioctl
 };
 
-static int __init
-
-mod_init(void) {
+static int __init mod_init(void) {
     /* register device number */
     int retval;
     retval = register_chrdev(MYMAJOR, "matthew_driver", &fops);
@@ -120,19 +135,21 @@ mod_init(void) {
     return 0;
 }
 
-static void __exit
-
-mod_exit(void) {
+static void __exit mod_exit(void) {
     unregister_chrdev(MYMAJOR, "matthew_driver");
     printk(KERN_INFO
     "Goodbye, World!\n");
 }
 
-void print_info_pci_dev_k(my_pci_dev_struct *my_device){
-    printk(KERN_INFO "Device devfn fields is : %u\n" , my_device->devfn);
-    printk(KERN_INFO "Device vendor fields is : %hu\n" , my_device->vendor);
-    printk(KERN_INFO "Device deivce fields is : %hu\n" , my_device->device);
-    printk(KERN_INFO "Device class fields is : %u\n" , my_device->class);
+void print_info_pci_dev_k(my_pci_dev_struct *my_device) {
+    printk(KERN_INFO
+    "Device devfn fields is : %u\n", my_device->devfn);
+    printk(KERN_INFO
+    "Device vendor fields is : %hu\n", my_device->vendor);
+    printk(KERN_INFO
+    "Device deivce fields is : %hu\n", my_device->device);
+    printk(KERN_INFO
+    "Device class fields is : %u\n", my_device->class);
 }
 
 module_init(mod_init);
