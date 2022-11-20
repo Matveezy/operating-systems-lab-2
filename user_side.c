@@ -19,9 +19,11 @@ int main(int argc, char **argv) {
 
     unsigned int vendor_id = (unsigned int) strtol(argv[1], NULL, 16);
     unsigned int device_id = (unsigned int) strtol(argv[2], NULL, 16);
+
+
     pci_dev_params pci_dev_prms = {.vendor_id = vendor_id, .device_id = device_id};
-    my_pci_dev_struct my_dev;
-    my_socket_struct my_sock;
+    my_pci_dev_struct my_dev = {0};
+    my_socket_struct my_sock = {0};
     int dev = open("/dev/matthew_device", O_WRONLY);
 
     if (-1 == dev) {
@@ -31,10 +33,10 @@ int main(int argc, char **argv) {
 
     ioctl(dev, PCI_DEV_W_PARAMS, &pci_dev_prms);
     ioctl(dev, PCI_DEV_R_VALUE, &my_dev);
-    if (my_dev.ioctl_state = EXCELLENT) {
+    if (my_dev.ioctl_state == EXCELLENT) {
         print_info_pci_dev_u(&my_dev);
     } else {
-        printf("There is no devices with such params!\n");
+        printf("There are no PCI devices with such params!\n");
     }
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -42,7 +44,7 @@ int main(int argc, char **argv) {
     ioctl(dev, SOCKET_FD_W_VALUE, &sockfd);
 
     ioctl(dev, SOCKET_R_VALUE, &my_sock);
-    if (my_sock.ioctl_state == EXCELLENT) {
+    if (EXCELLENT == my_sock.ioctl_state) {
         print_info_socket_u(&my_sock);
     } else {
         printf("There is no socket with the fd = %d\n", sockfd);
@@ -50,6 +52,7 @@ int main(int argc, char **argv) {
 
     printf("Opening device file was successfull!\n");
     close(dev);
+    close(sockfd);
     return 0;
 }
 
