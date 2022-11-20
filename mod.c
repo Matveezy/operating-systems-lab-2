@@ -8,7 +8,6 @@
 #include <linux/uaccess.h>
 #include <linux/string.h>
 
-#include "my_pci.c"
 #include "./ioctl/ioctl_cmd.h"
 
 MODULE_LICENSE("GPL");
@@ -18,7 +17,7 @@ MODULE_VERSION("0.01");
 
 #define MYMAJOR 17
 
-
+void print_info_pci_dev_k(my_pci_dev_struct *);
 my_pci_dev_struct my_device = {0};
 static struct socket *sock = NULL;
 static my_socket_struct my_sock;
@@ -127,6 +126,13 @@ mod_exit(void) {
     unregister_chrdev(MYMAJOR, "matthew_driver");
     printk(KERN_INFO
     "Goodbye, World!\n");
+}
+
+void print_info_pci_dev_k(my_pci_dev_struct *my_device){
+    printk(KERN_INFO "Device devfn fields is : %u\n" , my_device->devfn);
+    printk(KERN_INFO "Device vendor fields is : %hu\n" , my_device->vendor);
+    printk(KERN_INFO "Device deivce fields is : %hu\n" , my_device->device);
+    printk(KERN_INFO "Device class fields is : %u\n" , my_device->class);
 }
 
 module_init(mod_init);
