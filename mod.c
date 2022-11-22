@@ -9,7 +9,7 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 
-#include "./ioctl/ioctl_cmd.h"
+#include "./print_info/print_info_k.c"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Matvey Chukhno");
@@ -17,8 +17,6 @@ MODULE_DESCRIPTION("My kernel module.");
 MODULE_VERSION("0.01");
 
 #define MYMAJOR 17
-
-void print_info_pci_dev_k(my_pci_dev_struct *);
 
 my_pci_dev_struct my_device = {0};
 static struct socket *sock = NULL;
@@ -67,8 +65,7 @@ static long int my_ioctl(struct file *file, unsigned cmd, unsigned long arg) {
                     my_sock.ioctl_state = EXCELLENT;
                     my_sock.type = sock->type;
                     my_sock.flags = sock->flags;
-                    printk("Socket type is : %hx\n", sock->type);
-                    printk("Socket flags is : %lu\n", sock->flags);
+                    print_info_socket_k(&my_sock);
                 }
             }
             break;
@@ -139,17 +136,6 @@ static void __exit mod_exit(void) {
     unregister_chrdev(MYMAJOR, "matthew_driver");
     printk(KERN_INFO
     "Goodbye, World!\n");
-}
-
-void print_info_pci_dev_k(my_pci_dev_struct *my_device) {
-    printk(KERN_INFO
-    "Device devfn fields is : %u\n", my_device->devfn);
-    printk(KERN_INFO
-    "Device vendor fields is : %hu\n", my_device->vendor);
-    printk(KERN_INFO
-    "Device deivce fields is : %hu\n", my_device->device);
-    printk(KERN_INFO
-    "Device class fields is : %u\n", my_device->class);
 }
 
 module_init(mod_init);
