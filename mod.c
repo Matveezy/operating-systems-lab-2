@@ -7,7 +7,6 @@
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
 #include <linux/string.h>
-#include <linux/slab.h>
 
 #include "./print_info/print_info_k.c"
 
