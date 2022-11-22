@@ -6,11 +6,7 @@
 #include <sys/socket.h>
 #include <string.h>
 
-#include "./ioctl/ioctl_cmd.h"
-
-void print_info_pci_dev_u(my_pci_dev_struct *);
-
-void print_info_socket_u(my_socket_struct *);
+#include "./print_info/print_info_u.h"
 
 int main(int argc, char **argv) {
 
@@ -60,17 +56,4 @@ int main(int argc, char **argv) {
     close(dev);
     close(sockfd);
     return 0;
-}
-
-void print_info_pci_dev_u(my_pci_dev_struct *my_device) {
-    printf("Device driver name is : %s\n", my_device->driver_name);
-    printf("Device devfn field is : %u\n", my_device->devfn);
-    printf("Device vendor field is : %hu\n", my_device->vendor);
-    printf("Device deivce field is : %hu\n", my_device->device);
-    printf("Device class field is : %u\n", my_device->class);
-}
-
-void print_info_socket_u(my_socket_struct *my_socket) {
-    printf("Socket type is: %hx\n", my_socket->type);
-    printf("Socket flags is: %lu\n", my_socket->flags);
 }
